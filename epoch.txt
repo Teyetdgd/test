@@ -1,0 +1,1 @@
+Bu commit Unix zamaninin sifir noktasinda atilmistir. Big Bang!
