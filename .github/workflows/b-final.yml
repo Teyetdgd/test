@@ -1,11 +1,11 @@
-name: FATIH-PIE-SUCCESS-NEW
+name: FATIH-PIE-SUCCESS-NEW-LAST
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-lastest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
