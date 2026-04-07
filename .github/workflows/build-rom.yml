@@ -1,11 +1,11 @@
-name: Ultra-Minimal Android ROM Build
+name: AOSP-Build-Final
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    # 24.04'teki paket sorunlarından kaçmak için 22.04'e dönüyoruz
+    # Kesinlikle 22.04 kullanıyoruz
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -13,14 +13,15 @@ jobs:
 
       - name: Disk Alanı Aç
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc "/usr/local/share/boost" "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc "/usr/local/share/boost"
           df -h
 
-      - name: Bağımlılıkları Kur (Ubuntu 22.04 Garantili)
+      - name: Bağımlılıkları Kur (Manuel Fix)
         run: |
           sudo apt-get update
+          # Sorun çıkaran paketi listeden çıkardım, yerine temel ncurses ekledim
           sudo apt-get install -y bc build-essential zip curl libc6-dev-i386 \
-            libncurses5-dev lib32ncurses5-dev lib32z1-dev \
+            libncurses5-dev lib32z1-dev \
             libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig \
             python3 python-is-python3 libssl-dev x11proto-core-dev libx11-dev \
             bison gperf
@@ -32,7 +33,7 @@ jobs:
           chmod a+x ~/bin/repo
           echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: AOSP Kaynak Kodunu Çek (Ultra-Light)
+      - name: AOSP Kaynak Kodunu Çek
         run: |
           mkdir android && cd android
           repo init -u https://android.googlesource.com/platform/manifest -b android-12.1.0_r27 --depth=1
@@ -43,68 +44,6 @@ jobs:
           cd android
           source build/envsetup.sh
           lunch aosp_x86_64-eng 
-          make systemimage -j$(nproc --all)
-
-      - name: Artifact Olarak Yükle
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Minimal-Android-ROM
-          path: android/out/target/product/generic_x86_64/system.imgname: Ultra-Minimal Android ROM Build
-
-on:
-  workflow_dispatch: # Manuel başlatmak için
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Disk Alanı Aç (Maksimum Kapasite)
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          # Ubuntu 24.04 için ekstra temizlik
-          sudo apt-get Quick-Clean -y || true
-          docker image prune -a -f
-          df -h
-
-      - name: Bağımlılıkları Kur (Ubuntu 24.04 Uyumlu)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bc build-essential zip curl libc6-dev-i386 \
-            libncurses5 libncurses5-dev lib32z1-dev \
-            libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig \
-            python3 python-is-python3 libssl-dev x11proto-core-dev libx11-dev \
-            bison gperf libxml2-utils
-
-      - name: Repo Aracını Kur
-        run: |
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          # Path'i kalıcı hale getirmek için GITHUB_PATH kullanıyoruz
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: AOSP Kaynak Kodunu Çek (Ultra-Light Sync)
-        run: |
-          mkdir android && cd android
-          repo init -u https://android.googlesource.com/platform/manifest -b android-14.0.0_r1 --depth=1
-          # Sadece en gerekli repoları çekerek diskten tasarruf ediyoruz
-          repo sync -c -j$(nproc --all) --no-clone-bundle --no-tags --optimized-fetch --prune
-
-      - name: ROM Derleme (System Image Only)
-        run: |
-          cd android
-          source build/envsetup.sh
-          # x86_64 PC emülasyonu için en hafif profil
-          lunch aosp_x86_64-eng 
-          # Tüm Android'i değil, sadece temel sistemi derle
           make systemimage -j$(nproc --all)
 
       - name: Artifact Olarak Yükle
