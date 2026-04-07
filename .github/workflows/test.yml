@@ -1,42 +1,12 @@
-name: FINAL-FISEK
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    # 22.04'te kalalım, Noble (24.04) hala çok sorunlu
-    runs-on: ubuntu-22.04 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Bağımlılıkları Kur (Hata Yönetimli)
+- name: Bağımlılıkları Kur (Libncurses Fix)
         run: |
           sudo apt-get update
-          # Hata verebilecek paketi sildim, hata verse de || true ile devam et diyoruz
           sudo apt-get install -y bc build-essential zip curl libc6-dev-i386 \
-            libncurses5-dev lib32z1-dev \
+            libncurses5 libncurses5-dev lib32z1-dev \
             libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig \
             python3 python-is-python3 libssl-dev x11proto-core-dev libx11-dev \
-            bison gperf || true
-
-      - name: Repo Aracını Kur
-        run: |
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: AOSP Kodunu Çek (Hızlı Mod)
-        run: |
-          mkdir android && cd android
-          repo init -u https://android.googlesource.com/platform/manifest -b android-11.0.0_r1 --depth=1
-          repo sync -c -j$(nproc --all) --no-clone-bundle --no-tags
-
-      - name: Derlemeyi Başlat
-        run: |
-          cd android
-          source build/envsetup.sh
-          lunch aosp_x86_64-eng 
-          make systemimage -j$(nproc --all)
+            bison gperf
+          
+          # KRİTİK FİX: Eksik olan .so.5 kütüphanesini .so.6'ya bağlıyoruz
+          sudo ln -s /usr/lib/x86_64-linux-gnu/libncurses.so.6 /usr/lib/x86_64-linux-gnu/libncurses.so.5
+          sudo ln -s /usr/lib/x86_64-linux-gnu/libtinfo.so.6 /usr/lib/x86_64-linux-gnu/libtinfo.so.5
