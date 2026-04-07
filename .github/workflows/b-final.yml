@@ -1,4 +1,4 @@
-name: FATIH-PIE-SUCCESS
+name: FATIH-PIE-SUCCESS-NEW
 
 on:
   workflow_dispatch:
